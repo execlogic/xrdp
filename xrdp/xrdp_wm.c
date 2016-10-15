@@ -1459,8 +1459,73 @@ xrdp_wm_key(struct xrdp_wm *self, int device_flags, int scan_code)
 int APP_CC
 xrdp_wm_key_unicode(struct xrdp_wm *self, int device_flags, int unicode)
 {
-    g_writeln("xrdp_wm_key_unicode: device_flags 0x%8.8x unicode 0x%8.8x",
-              device_flags, unicode);
+    int index;
+
+    for (index = 8; index < 256; index++)
+    {
+        if (unicode == self->keymap.keys_noshift[index].chr)
+        {
+            xrdp_wm_key(self, device_flags, index - 8);
+            return 0;
+        }
+    }
+
+    for (index = 8; index < 256; index++)
+    {
+        if (unicode == self->keymap.keys_shift[index].chr)
+        {
+            if (device_flags & KBD_FLAG_UP)
+            {
+                xrdp_wm_key(self, device_flags, index - 8);
+                xrdp_wm_key(self, KBD_FLAG_UP, 42);
+            }
+            else
+            {
+                xrdp_wm_key(self, KBD_FLAG_DOWN, 42);
+                xrdp_wm_key(self, device_flags, index - 8);
+            }
+            return 0;
+        }
+    }
+
+    for (index = 8; index < 256; index++)
+    {
+        if (unicode == self->keymap.keys_altgr[index].chr)
+        {
+            if (device_flags & KBD_FLAG_UP)
+            {
+                xrdp_wm_key(self, device_flags, index - 8);
+                xrdp_wm_key(self, KBD_FLAG_UP | KBD_FLAG_EXT, 56);
+            }
+            else
+            {
+                xrdp_wm_key(self, KBD_FLAG_DOWN | KBD_FLAG_EXT, 56);
+                xrdp_wm_key(self, device_flags, index - 8);
+            }
+            return 0;
+        }
+    }
+
+    for (index = 8; index < 256; index++)
+    {
+        if (unicode == self->keymap.keys_shiftaltgr[index].chr)
+        {
+            if (device_flags & KBD_FLAG_UP)
+            {
+                xrdp_wm_key(self, device_flags, index - 8);
+                xrdp_wm_key(self, KBD_FLAG_UP | KBD_FLAG_EXT, 56);
+                xrdp_wm_key(self, KBD_FLAG_UP, 42);
+            }
+            else
+            {
+                xrdp_wm_key(self, KBD_FLAG_DOWN, 42);
+                xrdp_wm_key(self, KBD_FLAG_DOWN | KBD_FLAG_EXT, 56);
+                xrdp_wm_key(self, device_flags, index - 8);
+            }
+            return 0;
+        }
+    }
+
     return 0;
 }
 
